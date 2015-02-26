@@ -238,7 +238,7 @@ minetest.register_on_punchnode(function(pos, node, puncher)
 		return
 	end
 	wielded.wear[name] = item:get_wear()
-	-- TODO: re-add for costum tools like lighter
+	-- TODO: re-add for custom tools like lighter
 end)
 
 minetest.register_on_dignode(function(pos, oldnode, digger)
