@@ -5,11 +5,11 @@ tweak.formspec = {}
 
 tweak.buttons = {
 --sort_asc
-"0.55,0.6;sort_asc;^]",
+"0.55,0.6;sort_asc;^]".."tooltip[sort_asc;sort Items asc.;#30434C;#FFF]",
 --sort_desc
-"0.55,0.6;sort_desc;v]",
+"0.55,0.6;sort_desc;v]".."tooltip[sort_desc;sort Items desc.;#30434C;#FFF]",
 --concatenate
-"0.65,0.6;sort;›•]"
+"0.65,0.6;sort;›•]".."tooltip[sort;stack Items and sort asc.;#30434C;#FFF]"
 }
 
 local function get_formspec_size(formspec)
@@ -28,19 +28,44 @@ local function get_formspec_size(formspec)
 	return w,h
 end
 
-local function add_buttons(player)
+local function add_buttons(player, formspec)
 	local name = player:get_player_name()
-	local formspec = player:get_inventory_formspec()
+	if not formspec then
+		formspec = player:get_inventory_formspec()
+	end
 	local w,h = get_formspec_size(formspec)
 	for i=1,#tweak.buttons do
 		formspec = formspec .. "button["..w-2+(i*0.5)..",-0.2;" .. tweak.buttons[i]
 	end
 	player:set_inventory_formspec(formspec)
+	return formspec
+end
+
+local armor_mod = minetest.get_modpath("3d_armor")
+local ui_mod = minetest.get_modpath("unified_inventory")
+-- override mods formspec function
+if ui_mod then
+	local org = unified_inventory.get_formspec
+	unified_inventory.get_formspec = function(player, page)
+		local formspec = org(player, page)
+		return add_buttons(player, formspec)
+	end
+end
+if armor_mod and not ui_mod then
+	local org = armor.get_armor_formspec
+	armor.get_armor_formspec = function(self, name)
+		local formspec = org(self, name)
+		return add_buttons(minetest.get_player_by_name(name), formspec)
+	end
 end
 
 minetest.register_on_joinplayer(function(player)
+	local formspec = nil
+	if armor_mod and not ui_mod then
+		formspec = armor.get_armor_formspec(self, player:get_player_name())
+	end
 	minetest.after(0.65,function()
-		add_buttons(player)
+		add_buttons(player, formspec)
 	end)
 end)
 
@@ -144,7 +169,7 @@ tweak.sort = function(player, mode, con)
 
 		if con then
 			tmp_list = tweak.concatenate(tmp_list)
-			table.sort(tmp_list, comp_in)
+			table.sort(tmp_list, mode)
 		end
 
 		--write back to inventory
