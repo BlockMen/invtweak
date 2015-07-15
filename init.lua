@@ -34,6 +34,9 @@ local function add_buttons(player, formspec)
 		formspec = player:get_inventory_formspec()
 	end
 	local w,h = get_formspec_size(formspec)
+	if not w or not h then
+		return
+	end
 	for i=1,#tweak.buttons do
 		formspec = formspec .. "button["..w-2+(i*0.5)..",-0.2;" .. tweak.buttons[i]
 	end
